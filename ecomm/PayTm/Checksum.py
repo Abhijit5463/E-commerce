@@ -1,5 +1,3 @@
- 
-# pip install pycryptodome
 import base64
 import string
 import random
@@ -55,22 +53,18 @@ def generate_checksum_by_str(param_str, merchant_key, salt=None):
 
 
 def verify_checksum(param_dict, merchant_key, checksum):
-    # Remove checksum
+  
     if 'CHECKSUMHASH' in param_dict:
         param_dict.pop('CHECKSUMHASH')
 
-    # Get salt
+   
     paytm_hash = __decode__(checksum, IV, merchant_key)
     salt = paytm_hash[-4:]
     calculated_checksum = generate_checksum(param_dict, merchant_key, salt=salt)
     return calculated_checksum == checksum
 
 def verify_checksum_by_str(param_str, merchant_key, checksum):
-    # Remove checksum
-    #if 'CHECKSUMHASH' in param_dict:
-        #param_dict.pop('CHECKSUMHASH')
-
-    # Get salt
+    
     paytm_hash = __decode__(checksum, IV, merchant_key)
     salt = paytm_hash[-4:]
     calculated_checksum = generate_checksum_by_str(param_str, merchant_key, salt=salt)
@@ -98,26 +92,26 @@ __unpad__ = lambda s: s[0:-ord(s[-1])]
 
 
 def __encode__(to_encode, iv, key):
-    # Pad
+   
     to_encode = __pad__(to_encode)
-    # Encrypt
+ 
     c = AES.new(key.encode('utf-8'), AES.MODE_CBC, iv.encode('utf-8'))
     to_encode = c.encrypt(to_encode.encode('utf-8'))
-    # Encode
+   
     to_encode = base64.b64encode(to_encode)
     return to_encode.decode("UTF-8")
 
 
 def __decode__(to_decode, iv, key):
-    # Decode
+   
     to_decode = base64.b64decode(to_decode)
-    # Decrypt
+   
     c = AES.new(key.encode('utf-8'), AES.MODE_CBC, iv.encode('utf-8'))
     to_decode = c.decrypt(to_decode)
     if type(to_decode) == bytes:
-        # convert bytes array to str.
+        
         to_decode = to_decode.decode()
-    # remove pad
+   
     return __unpad__(to_decode)
 
 
@@ -135,3 +129,5 @@ if __name__ == "__main__":
     print(verify_checksum(
         params, 'xxxxxxxxxxxxxxxx',
         "CD5ndX8VVjlzjWbbYoAtKQIlvtXPypQYOg0Fi2AUYKXZA5XSHiRF0FDj7vQu66S8MHx9NaDZ/uYm3WBOWHf+sDQAmTyxqUipA7i1nILlxrk="))
+
+

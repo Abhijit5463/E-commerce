@@ -1,13 +1,16 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from .models import Product, Contact, Orders, OrderUpdate
 from math import ceil
 import json
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate ,login,logout
 from PayTm import Checksum
-# Create your views here.
 from django.http import HttpResponse
-MERCHANT_KEY = 'Your-Merchant-Key-Here'
-
+from django.contrib.auth.decorators import login_required
+MERCHANT_KEY = 'kbzk1DSbJiV_O3p5'
+def logoutUser(request):
+	logout(request)
+	return redirect('logins')
 def index(request):
     allProds = []
     catprods = Product.objects.values('category', 'id')
@@ -20,20 +23,21 @@ def index(request):
     params = {'allProds':allProds}
     return render(request, 'shop/index.html', params)
 
+@login_required(login_url='logins')
 def searchMatch(query, item):
-    '''return true only if query matches the item'''
+    
     if query in item.desc.lower() or query in item.product_name.lower() or query in item.category.lower():
         return True
     else:
         return False
-
+@login_required(login_url='logins')
 def search(request):
     query = request.GET.get('search')
     allProds = []
-    catprods = Product.objects.values('category', 'id')
-    cats = {item['category'] for item in catprods}
+    catprods = Product.objects.values('product_name', 'id')
+    cats = {item['product_name'] for item in catprods}
     for cat in cats:
-        prodtemp = Product.objects.filter(category=cat)
+        prodtemp = Product.objects.filter(product_name=cat)
         prod = [item for item in prodtemp if searchMatch(query, item)]
 
         n = len(prod)
@@ -42,14 +46,13 @@ def search(request):
             allProds.append([prod, range(1, nSlides), nSlides])
     params = {'allProds': allProds, "msg": ""}
     if len(allProds) == 0 or len(query)<4:
-        params = {'msg': "Please make sure to enter relevant search query"}
+        params = {'msg': "No such products found!"}
     return render(request, 'shop/search.html', params)
-
+@login_required(login_url='logins')
 
 def about(request):
     return render(request, 'shop/about.html')
-
-
+@login_required(login_url='logins')
 def contact(request):
     thank = False
     if request.method=="POST":
@@ -62,7 +65,7 @@ def contact(request):
         thank = True
     return render(request, 'shop/contact.html', {'thank': thank})
 
-
+@login_required(login_url='logins')
 def tracker(request):
     if request.method=="POST":
         orderId = request.POST.get('orderId', '')
@@ -74,7 +77,7 @@ def tracker(request):
                 updates = []
                 for item in update:
                     updates.append({'text': item.update_desc, 'time': item.timestamp})
-                    response = json.dumps([updates, order[0].items_json], default=str)
+                    response = json.dumps({updates, order[0].items_json}, default=str)
                 return HttpResponse(response)
             else:
                 return HttpResponse('{}')
@@ -82,13 +85,15 @@ def tracker(request):
             return HttpResponse('{}')
 
     return render(request, 'shop/tracker.html')
-
+@login_required(login_url='logins')
 
 def productView(request, myid):
 
-    # Fetch the product using the id
+  
     product = Product.objects.filter(id=myid)
     return render(request, 'shop/prodView.html', {'product':product[0]})
+
+@login_required(login_url='logins')
 
 
 def checkout(request):
@@ -109,19 +114,17 @@ def checkout(request):
         update.save()
         thank = True
         id = order.order_id
-        # return render(request, 'shop/checkout.html', {'thank':thank, 'id': id})
-        # Request paytm to transfer the amount to your account after payment by user
         param_dict = {
+            'MID': 'WorldP64425807474247',
+            'ORDER_ID': str(order.order_id),
+            'TXN_AMOUNT': str(amount),
+            'CUST_ID': email,
+            'INDUSTRY_TYPE_ID': 'Retail',
+            'WEBSITE': 'WEBSTAGING',
+            'CHANNEL_ID': 'WEB',
+            'CALLBACK_URL':'localhost:8000/shop/handlerequest/',
 
-                'MID': 'Your-Merchant-Id-Here',
-                'ORDER_ID': str(order.order_id),
-                'TXN_AMOUNT': str(amount),
-                'CUST_ID': email,
-                'INDUSTRY_TYPE_ID': 'Retail',
-                'WEBSITE': 'WEBSTAGING',
-                'CHANNEL_ID': 'WEB',
-                'CALLBACK_URL':'http://127.0.0.1:8000/shop/handlerequest/',
-
+        
         }
         param_dict['CHECKSUMHASH'] = Checksum.generate_checksum(param_dict, MERCHANT_KEY)
         return render(request, 'shop/paytm.html', {'param_dict': param_dict})
@@ -131,7 +134,7 @@ def checkout(request):
 
 @csrf_exempt
 def handlerequest(request):
-    # paytm will send you post request here
+  
     form = request.POST
     response_dict = {}
     for i in form.keys():
@@ -146,3 +149,4 @@ def handlerequest(request):
         else:
             print('order was not successful because' + response_dict['RESPMSG'])
     return render(request, 'shop/paymentstatus.html', {'response': response_dict})
+

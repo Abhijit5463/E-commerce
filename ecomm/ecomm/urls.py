@@ -17,10 +17,29 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
-
+from .views import registerPage,loginPage
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('shop/', include('shop.urls')),
+    path('register/', views.registerPage, name='register'),
+    path('login/', views.loginPage, name='logins'),
    
-    path('', views.index)
+    path('shop/', include('shop.urls')),
+    path('shop/',include('django.contrib.auth.urls')),
+    path('', views.index),
+    
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

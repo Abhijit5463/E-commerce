@@ -13,7 +13,29 @@ class Product(models.Model):
 
     def __str__(self):
         return self.product_name
+class VariationManager(models.Manager):
+    def all(self):
+        return super(VariationManager, self).filter(active=True)
+    def sizes(self):
+        return super(VariationManager, self).filter(category='size')
 
+VAR_CATEGORIES = (
+    ('size', 'size'),
+)
+class Variation(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_name = models.CharField(max_length=50)
+    image = models.ImageField(upload_to='shop/images', default="")
+    
+    category = models.CharField(max_length=50, default="")
+    # subcategory = models.CharField(max_length=50, default="")
+    price = models.IntegerField(default=0)
+    desc = models.CharField(max_length=300)
+    pub_date = models.DateField()
+
+    def __str__(self):
+        return self.product_name
+    
 
 class Contact(models.Model):
     msg_id = models.AutoField(primary_key=True)
@@ -46,3 +68,20 @@ class OrderUpdate(models.Model):
 
     def __str__(self):
         return self.update_desc[0:7] + "..."
+
+
+class Register(models.Model):
+    msg_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=50)
+    email = models.CharField(max_length=70, default="")
+    password= models.CharField(max_length=30, default="")
+    Confirm_password= models.CharField(max_length=30, default="")
+
+class Login(models.Model):
+
+    msg_id = models.AutoField(primary_key=True)
+    email = models.CharField(max_length=70, default="")
+    password= models.CharField(max_length=30, default="")
+
+    def __str__(self):
+        return self.name
